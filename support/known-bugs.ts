@@ -16,8 +16,16 @@ const FR15_2: Bug = { id: 'BUG-FR15-002', issue: 9 };
 const FR15_3: Bug = { id: 'BUG-FR15-003', issue: 10 };
 const FR15_4: Bug = { id: 'BUG-FR15-004', issue: 11 };
 
+const FR05_1: Bug = { id: 'BUG-FR05-001', issue: 12 };
+const FR05_2: Bug = { id: 'BUG-FR05-002', issue: 13 };
+const FR05_3: Bug = { id: 'BUG-FR05-003', issue: 14 };
+const FR05_4: Bug = { id: 'BUG-FR05-004', issue: 15 };
+const FR05_5: Bug = { id: 'BUG-FR05-005', issue: 16 };
+const FR05_6: Bug = { id: 'BUG-FR05-006', issue: 17 };
+const FR05_7: Bug = { id: 'BUG-FR05-007', issue: 18 };
+
 const KNOWN: Record<string, Record<string, Bug[]>> = {
-  FR05: {}, // chưa có bug được xác nhận; thêm sau khi chạy và review
+  FR05: { TC03: [FR05_1], TC04: [FR05_2], TC08: [FR05_3], TC09: [FR05_4], TC10: [FR05_5], TC11: [FR05_6], TC12: [FR05_7] },
   FR02: { TC02: [FR02_1], TC03: [FR02_1], TC04: [FR02_1, FR02_2], TC07: [FR02_3], TC08: [FR02_2], TC14: [FR02_2], N2: [FR02_4] },
   FR09: { TC01: [FR09_1], TC09b: [FR09_2], TC14: [FR09_3], TC17: [FR09_3] },
   FR15: {
