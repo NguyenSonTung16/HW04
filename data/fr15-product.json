@@ -1,0 +1,487 @@
+[
+ {
+  "id": "TC01",
+  "title": "Thêm sản phẩm hợp lệ",
+  "origin": "HW02",
+  "kind": "add",
+  "input": {
+   "name": "HW04 FR15 TC01 thêm",
+   "price": 100000
+  },
+  "expected": {
+   "accepted": true
+  },
+  "predicted": "Pass"
+ },
+ {
+  "id": "TC02",
+  "title": "Xem sản phẩm tồn tại",
+  "origin": "HW02",
+  "kind": "view",
+  "expected": {},
+  "predicted": "Pass"
+ },
+ {
+  "id": "TC03",
+  "title": "Sửa chỉ sản phẩm đích, kiểm ngay sau lưu và sau reload",
+  "origin": "HW02",
+  "kind": "edit",
+  "input": {
+   "name": "HW04 FR15 TC03 đã sửa",
+   "price": 123456
+  },
+  "expected": {
+   "accepted": true
+  },
+  "predicted": "Fail",
+  "predictedBug": "BUG-FR15-001 (sửa: mọi dòng đổi tên, giá cũ ngay sau lưu)",
+  "note": "DB đúng (T3) nhưng T1 sai; T2 đúng sau reload."
+ },
+ {
+  "id": "TC04",
+  "title": "Xóa sản phẩm đích",
+  "origin": "HW02",
+  "kind": "delete",
+  "expected": {},
+  "predicted": "Pass"
+ },
+ {
+  "id": "TC05",
+  "title": "Thêm với tên rỗng",
+  "origin": "HW02",
+  "kind": "blocked-add",
+  "input": {
+   "name": "",
+   "price": 100000
+  },
+  "expected": {},
+  "predicted": "Pass",
+  "note": "Bị thuộc tính required của trình duyệt chặn: không có request nào được gửi."
+ },
+ {
+  "id": "TC06",
+  "title": "Sửa với tên rỗng",
+  "origin": "HW02",
+  "kind": "blocked-edit",
+  "input": {
+   "name": "",
+   "price": 100000
+  },
+  "expected": {},
+  "predicted": "Pass",
+  "note": "Bị thuộc tính required chặn."
+ },
+ {
+  "id": "TC07",
+  "title": "Thêm với tên 256 ký tự",
+  "origin": "HW02",
+  "kind": "add",
+  "input": {
+   "nameLength": 256,
+   "price": 100000
+  },
+  "expected": {
+   "accepted": false
+  },
+  "predicted": "Fail",
+  "predictedBug": "BUG-FR15-002 (tên 256 ký tự được chấp nhận)"
+ },
+ {
+  "id": "TC08",
+  "title": "Sửa với tên 256 ký tự",
+  "origin": "HW02",
+  "kind": "edit",
+  "input": {
+   "nameLength": 256,
+   "price": 100000
+  },
+  "expected": {
+   "accepted": false
+  },
+  "predicted": "Fail",
+  "predictedBug": "BUG-FR15-002 (tên 256 ký tự được chấp nhận)"
+ },
+ {
+  "id": "TC09",
+  "title": "Thêm thiếu trường tên (bỏ khỏi request)",
+  "origin": "HW02",
+  "kind": "api-add",
+  "api": {
+   "omit": [
+    "name"
+   ]
+  },
+  "expected": {
+   "accepted": false
+  },
+  "predicted": "Fail",
+  "note": "API: giao diện luôn gửi khóa name. Bỏ khóa, không phải chuỗi rỗng."
+ },
+ {
+  "id": "TC10",
+  "title": "Thêm với giá 0",
+  "origin": "HW02",
+  "kind": "add",
+  "input": {
+   "name": "HW04 FR15 TC10",
+   "price": 0
+  },
+  "expected": {
+   "accepted": false
+  },
+  "predicted": "Fail",
+  "predictedBug": "BUG-FR15-003 (giá 0 được chấp nhận)"
+ },
+ {
+  "id": "TC11",
+  "title": "Sửa với giá 0",
+  "origin": "HW02",
+  "kind": "edit",
+  "input": {
+   "name": "HW04 FR15 TC11",
+   "price": 0
+  },
+  "expected": {
+   "accepted": false
+  },
+  "predicted": "Fail",
+  "predictedBug": "BUG-FR15-003 (giá 0 được chấp nhận)"
+ },
+ {
+  "id": "TC12",
+  "title": "Thêm với giá âm",
+  "origin": "HW02",
+  "kind": "add",
+  "input": {
+   "name": "HW04 FR15 TC12",
+   "price": -1
+  },
+  "expected": {
+   "accepted": false
+  },
+  "predicted": "Fail",
+  "predictedBug": "Dự đoán: cùng nhóm BUG-FR15-003"
+ },
+ {
+  "id": "TC13",
+  "title": "Sửa với giá âm",
+  "origin": "HW02",
+  "kind": "edit",
+  "input": {
+   "name": "HW04 FR15 TC13",
+   "price": -1
+  },
+  "expected": {
+   "accepted": false
+  },
+  "predicted": "Fail",
+  "predictedBug": "Dự đoán: cùng nhóm BUG-FR15-003"
+ },
+ {
+  "id": "TC14",
+  "title": "Thêm với giá để trống (chuỗi rỗng)",
+  "origin": "HW02",
+  "kind": "add",
+  "input": {
+   "name": "HW04 FR15 TC14",
+   "price": ""
+  },
+  "expected": {
+   "accepted": false
+  },
+  "predicted": "Fail",
+  "note": "Ô số rỗng: form vẫn gửi khóa price với giá trị \"\"."
+ },
+ {
+  "id": "TC15",
+  "title": "Sửa với giá để trống (chuỗi rỗng)",
+  "origin": "HW02",
+  "kind": "edit",
+  "input": {
+   "name": "HW04 FR15 TC15",
+   "price": ""
+  },
+  "expected": {
+   "accepted": false
+  },
+  "predicted": "Fail"
+ },
+ {
+  "id": "TC16",
+  "title": "Thêm thiếu trường giá (bỏ khỏi request)",
+  "origin": "HW02",
+  "kind": "api-add",
+  "api": {
+   "omit": [
+    "price"
+   ]
+  },
+  "expected": {
+   "accepted": false
+  },
+  "predicted": "Fail",
+  "note": "API: bỏ khóa price (khác TC14)."
+ },
+ {
+  "id": "TC17",
+  "title": "Thêm với giá \"abc\"",
+  "origin": "HW02",
+  "kind": "api-add",
+  "api": {
+   "set": {
+    "price": "abc"
+   }
+  },
+  "expected": {
+   "accepted": false
+  },
+  "predicted": "Fail",
+  "note": "API: ô type=number không nhận chữ."
+ },
+ {
+  "id": "TC18",
+  "title": "Sửa với giá \"abc\"",
+  "origin": "HW02",
+  "kind": "api-edit",
+  "api": {
+   "set": {
+    "price": "abc"
+   }
+  },
+  "expected": {
+   "accepted": false
+  },
+  "predicted": "Fail",
+  "note": "API: ô type=number không nhận chữ."
+ },
+ {
+  "id": "TC19",
+  "title": "Thêm chưa chọn danh mục (chuỗi rỗng)",
+  "origin": "HW02",
+  "kind": "api-add",
+  "api": {
+   "set": {
+    "category_id": ""
+   }
+  },
+  "expected": {
+   "accepted": false
+  },
+  "predicted": "Fail",
+  "note": "API: select không có lựa chọn rỗng. Khóa vẫn gửi với \"\"."
+ },
+ {
+  "id": "TC20",
+  "title": "Sửa chưa chọn danh mục (chuỗi rỗng)",
+  "origin": "HW02",
+  "kind": "api-edit",
+  "api": {
+   "set": {
+    "category_id": ""
+   }
+  },
+  "expected": {
+   "accepted": false
+  },
+  "predicted": "Fail",
+  "note": "API: như TC19."
+ },
+ {
+  "id": "TC21",
+  "title": "Thêm thiếu trường danh mục (bỏ khỏi request)",
+  "origin": "HW02",
+  "kind": "api-add",
+  "api": {
+   "omit": [
+    "category_id"
+   ]
+  },
+  "expected": {
+   "accepted": false
+  },
+  "predicted": "Fail",
+  "note": "API: bỏ khóa category_id (khác TC19)."
+ },
+ {
+  "id": "TC22",
+  "title": "Thêm với danh mục không tồn tại",
+  "origin": "HW02",
+  "kind": "api-add",
+  "api": {
+   "set": {
+    "category_id": 999999
+   }
+  },
+  "expected": {
+   "accepted": false
+  },
+  "predicted": "Fail",
+  "note": "API: select chỉ có danh mục có sẵn."
+ },
+ {
+  "id": "TC23",
+  "title": "Sửa với danh mục không tồn tại",
+  "origin": "HW02",
+  "kind": "api-edit",
+  "api": {
+   "set": {
+    "category_id": 999999
+   }
+  },
+  "expected": {
+   "accepted": false
+  },
+  "predicted": "Fail",
+  "note": "API: select chỉ có danh mục có sẵn."
+ },
+ {
+  "id": "TC24",
+  "title": "Thêm tên 1 ký tự",
+  "origin": "HW02",
+  "kind": "add",
+  "input": {
+   "nameLength": 1,
+   "price": 100000
+  },
+  "expected": {
+   "accepted": true
+  },
+  "predicted": "Pass"
+ },
+ {
+  "id": "TC25",
+  "title": "Thêm tên 2 ký tự",
+  "origin": "HW02",
+  "kind": "add",
+  "input": {
+   "nameLength": 2,
+   "price": 100000
+  },
+  "expected": {
+   "accepted": true
+  },
+  "predicted": "Pass"
+ },
+ {
+  "id": "TC26",
+  "title": "Thêm tên 254 ký tự",
+  "origin": "HW02",
+  "kind": "add",
+  "input": {
+   "nameLength": 254,
+   "price": 100000
+  },
+  "expected": {
+   "accepted": true
+  },
+  "predicted": "Pass"
+ },
+ {
+  "id": "TC27",
+  "title": "Thêm tên 255 ký tự",
+  "origin": "HW02",
+  "kind": "add",
+  "input": {
+   "nameLength": 255,
+   "price": 100000
+  },
+  "expected": {
+   "accepted": true
+  },
+  "predicted": "Pass"
+ },
+ {
+  "id": "TC28",
+  "title": "Sửa tên 1 ký tự",
+  "origin": "HW02",
+  "kind": "edit",
+  "input": {
+   "nameLength": 1,
+   "price": 100000
+  },
+  "expected": {
+   "accepted": true
+  },
+  "predicted": "Fail",
+  "predictedBug": "BUG-FR15-001 (sửa: mọi dòng đổi tên, giá cũ ngay sau lưu)",
+  "note": "DB đúng (T3); T1 sai do BUG-FR15-001."
+ },
+ {
+  "id": "TC29",
+  "title": "Sửa tên 2 ký tự",
+  "origin": "HW02",
+  "kind": "edit",
+  "input": {
+   "nameLength": 2,
+   "price": 100000
+  },
+  "expected": {
+   "accepted": true
+  },
+  "predicted": "Fail",
+  "predictedBug": "BUG-FR15-001 (sửa: mọi dòng đổi tên, giá cũ ngay sau lưu)",
+  "note": "DB đúng (T3); T1 sai do BUG-FR15-001."
+ },
+ {
+  "id": "TC30",
+  "title": "Sửa tên 254 ký tự",
+  "origin": "HW02",
+  "kind": "edit",
+  "input": {
+   "nameLength": 254,
+   "price": 100000
+  },
+  "expected": {
+   "accepted": true
+  },
+  "predicted": "Fail",
+  "predictedBug": "BUG-FR15-001 (sửa: mọi dòng đổi tên, giá cũ ngay sau lưu)",
+  "note": "DB đúng (T3); T1 sai do BUG-FR15-001."
+ },
+ {
+  "id": "TC31",
+  "title": "Sửa tên 255 ký tự",
+  "origin": "HW02",
+  "kind": "edit",
+  "input": {
+   "nameLength": 255,
+   "price": 100000
+  },
+  "expected": {
+   "accepted": true
+  },
+  "predicted": "Fail",
+  "predictedBug": "BUG-FR15-001 (sửa: mọi dòng đổi tên, giá cũ ngay sau lưu)",
+  "note": "DB đúng (T3); T1 sai do BUG-FR15-001."
+ },
+ {
+  "id": "TC32",
+  "title": "Thêm với giá 1 đ",
+  "origin": "HW02",
+  "kind": "add",
+  "input": {
+   "name": "SP_THU_FR15",
+   "price": 1
+  },
+  "expected": {
+   "accepted": true
+  },
+  "predicted": "Pass"
+ },
+ {
+  "id": "TC33",
+  "title": "Sửa với giá 1 đ",
+  "origin": "HW02",
+  "kind": "edit",
+  "input": {
+   "name": "SP_THU_FR15",
+   "price": 1
+  },
+  "expected": {
+   "accepted": true
+  },
+  "predicted": "Fail",
+  "predictedBug": "BUG-FR15-001 (sửa: mọi dòng đổi tên, giá cũ ngay sau lưu)",
+  "note": "DB đúng (T3); T1 sai do BUG-FR15-001."
+ }
+]
