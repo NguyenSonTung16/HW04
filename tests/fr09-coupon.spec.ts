@@ -5,6 +5,7 @@ import { ProductPage, CartPage } from '../pages/ShopPages';
 import { CheckoutPage } from '../pages/CheckoutPage';
 import { amount } from '../support/money';
 import { API_URL } from '../support/env';
+import { bugAnnotations } from '../support/known-bugs';
 import { getUser } from '../support/db';
 import {
   SEED_PREFIX, seedProduct, deleteProduct, setCouponUsage, setCouponActive,
@@ -95,6 +96,7 @@ for (const c of cases) {
     const price = c.input.cartPrice;
     if (c.note) test.info().annotations.push({ type: 'note', description: c.note });
     if (c.predictedBug) test.info().annotations.push({ type: 'predicted-bug', description: c.predictedBug });
+    test.info().annotations.push(...bugAnnotations('FR09', c.id));
 
     if (c.kind === 'coupon' || c.kind === 'lowercase' || c.kind === 'empty-code' || c.kind === 'edit-total') {
       const userId = getUser(USER.email).id;

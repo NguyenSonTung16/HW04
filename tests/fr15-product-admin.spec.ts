@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { AdminProductPage } from '../pages/AdminProductPage';
 import { API_URL } from '../support/env';
+import { bugAnnotations } from '../support/known-bugs';
 import { adminToken, countProducts, deleteProductsByIds, getProduct, seedProduct } from '../support/product-db';
 
 type Input = { name?: string; nameLength?: number; price?: number | string };
@@ -67,6 +68,7 @@ for (const c of cases) {
     const info = test.info();
     info.annotations.push({ type: 'predicted', description: c.predicted + (c.predictedBug ? ` – ${c.predictedBug}` : '') });
     if (c.note) info.annotations.push({ type: 'note', description: c.note });
+    info.annotations.push(...bugAnnotations('FR15', c.id));
 
     const token = await adminToken();
     const admin = new AdminProductPage(page);

@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { LoginPage } from '../pages/LoginPage';
 import { API_URL } from '../support/env';
+import { bugAnnotations } from '../support/known-bugs';
 import { getUser, isLocked, lockRemainingSeconds, resetUser, setUserState } from '../support/db';
 
 const USER = 'test@eshop.com';
@@ -50,6 +51,7 @@ for (const c of cases) {
     const login = new LoginPage(page);
     const exp = c.expected ?? {};
     if (c.note) test.info().annotations.push({ type: 'note', description: c.note });
+    test.info().annotations.push(...bugAnnotations('FR02', c.id));
 
     if (c.kind === 'login') {
       setUserState(USER, c.setup ?? {});
