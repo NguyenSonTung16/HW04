@@ -1,11 +1,15 @@
-import { test, expect, Page, APIRequestContext } from '@playwright/test';
+import { test as base, expect, Page, APIRequestContext } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
 import { ProductPage, CartPage } from '../pages/ShopPages';
-import { CheckoutPage, amount } from '../pages/CheckoutPage';
+import { CheckoutPage } from '../pages/CheckoutPage';
+import { amount } from '../support/money';
 import { API_URL } from '../support/env';
 import { getUser } from '../support/db';
-import { seedProduct, setCouponUsage, setCouponActive, resetCouponState } from '../support/coupon-db';
+import {
+  SEED_PREFIX, seedProduct, deleteProduct, setCouponUsage, setCouponActive,
+  snapshotCoupon, restoreCoupon, CouponSnapshot,
+} from '../support/coupon-db';
 
 const USER = { email: 'test@eshop.com', password: 'Test1234!' };
 
@@ -23,39 +27,70 @@ type Case = {
 
 const cases: Case[] = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'fr09-coupon.json'), 'utf8'));
 
+/** Ghi lại các bản ghi do chính test này tạo hoặc sửa để trả về nguyên trạng sau test (kể cả khi test fail). */
+class Guard {
+  private snapshots: CouponSnapshot[] = [];
+  private productIds: number[] = [];
+  coupon(code: string, userId: number) {
+    const s = snapshotCoupon(code, userId);
+    if (s) this.snapshots.push(s);
+  }
+  product(id: number) { this.productIds.push(id); }
+  cleanup() {
+    for (const s of this.snapshots.reverse()) restoreCoupon(s);
+    for (const id of this.productIds) deleteProduct(id);
+  }
+}
+
+const test = base.extend<{ guard: Guard }>({
+  guard: async ({}, use) => {
+    const guard = new Guard();
+    try { await use(guard); } finally { guard.cleanup(); }
+  },
+});
+
 async function loginToken(request: APIRequestContext): Promise<string> {
   const res = await request.post(`${API_URL}/api/login`, { data: USER });
   expect(res.ok(), 'đăng nhập qua API để lấy token').toBeTruthy();
   return (await res.json()).token as string;
 }
 
-/** Mở trang sản phẩm có giá = cartPrice, thêm vào giỏ. Trả về response /api/users/me nếu có token. */
-async function putProductInCart(page: Page, cartPrice: number, token: string | null) {
-  const productId = seedProduct(cartPrice);
+/**
+ * Mở trang sản phẩm có giá = cartPrice, thêm vào giỏ rồi mở giỏ hàng. Trả về response /api/users/me nếu có token.
+ * Trước khi bấm thêm lần nữa luôn kiểm tra giỏ: chỉ bấm lại khi giỏ trống; nếu giỏ đã có hàng thì dừng ở
+ * kiểm tra cứng (đúng 1 dòng, đúng sản phẩm/giá/số lượng/tổng), không bấm thêm để tránh thêm trùng.
+ */
+async function putProductInCart(page: Page, guard: Guard, caseId: string, cartPrice: number, token: string | null) {
+  const name = `${SEED_PREFIX} ${caseId} ${test.info().project.name} ${cartPrice}`;
+  const productId = seedProduct(cartPrice, name);
+  guard.product(productId);
   if (token) await page.addInitScript((t) => localStorage.setItem('token', t), token);
   const meWait = token ? page.waitForResponse((r) => r.url().endsWith('/api/users/me')) : null;
   const product = new ProductPage(page);
+  const cart = new CartPage(page);
   await product.goto(productId);
   const me = meWait ? await meWait : null;
-  await product.addToCart();
+  for (let attempt = 1; ; attempt++) {
+    await product.addToCart();
+    await cart.open();
+    if ((await cart.items()).length > 0 || attempt === 3) break;
+    await page.goBack();
+    await expect(product.addButton).toBeVisible();
+  }
+  await cart.expectOnly({ name, price: cartPrice, quantity: 1 });
   return me;
 }
 
 async function goToCheckout(page: Page, cartPrice: number) {
-  const cart = new CartPage(page);
-  await cart.open();
-  expect.soft(amount(await cart.subtotal.innerText()), 'tổng giỏ hàng').toBe(cartPrice);
-  await cart.checkoutButton.click();
+  await new CartPage(page).checkoutButton.click();
   const checkout = new CheckoutPage(page);
   await checkout.expectOpen();
+  expect(amount(await checkout.grandTotal.innerText()), 'tổng thanh toán ban đầu = tổng giỏ hàng').toBe(cartPrice);
   return checkout;
 }
 
-// Dọn sản phẩm seed và trạng thái coupon ở global-teardown (không dọn ở afterAll để không phá dữ liệu của lượt khác).
-test.beforeEach(() => resetCouponState());
-
 for (const c of cases) {
-  test(`FR-09 ${c.id} – ${c.title}`, async ({ page, request }) => {
+  test(`FR-09 ${c.id} – ${c.title}`, async ({ page, request, guard }) => {
     const exp = c.expected;
     const price = c.input.cartPrice;
     if (c.note) test.info().annotations.push({ type: 'note', description: c.note });
@@ -63,9 +98,13 @@ for (const c of cases) {
 
     if (c.kind === 'coupon' || c.kind === 'lowercase' || c.kind === 'empty-code' || c.kind === 'edit-total') {
       const userId = getUser(USER.email).id;
-      if (c.input.code && c.input.used !== undefined) setCouponUsage(c.input.code, userId, c.input.used);
-      if (c.input.couponActive === false) setCouponActive(c.input.code, false);
-      await putProductInCart(page, price, await loginToken(request));
+      const dbCode = c.input.code.toUpperCase(); // giao diện tự viết hoa mã trước khi gửi
+      if (dbCode) {
+        guard.coupon(dbCode, userId); // chụp trước khi sửa, trả lại nguyên trạng sau test
+        setCouponActive(dbCode, c.input.couponActive ?? true);
+        setCouponUsage(dbCode, userId, c.input.used ?? 0);
+      }
+      await putProductInCart(page, guard, c.id, price, await loginToken(request));
       const checkout = await goToCheckout(page, price);
 
       if (c.kind === 'coupon') {
@@ -117,13 +156,12 @@ for (const c of cases) {
 
     if (c.kind === 'guest' || c.kind === 'badtoken') {
       if (c.kind === 'badtoken') {
-        const me = await putProductInCart(page, price, c.input.token!);
+        const me = await putProductInCart(page, guard, c.id, price, c.input.token!);
         expect(me!.status(), '/api/users/me với token sai').toBe(exp.meStatus);
         await expect.poll(() => page.evaluate(() => localStorage.getItem('token')), { message: 'token bị xóa khỏi localStorage' }).toBeNull();
       } else {
-        await putProductInCart(page, price, null);
+        await putProductInCart(page, guard, c.id, price, null);
       }
-      await new CartPage(page).open();
       let dialogMessage = '';
       page.once('dialog', (d) => { dialogMessage = d.message(); void d.accept(); });
       await page.getByRole('button', { name: 'Tiến hành thanh toán' }).click();

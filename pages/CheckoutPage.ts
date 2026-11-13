@@ -1,8 +1,5 @@
 import { Page, Locator, expect } from '@playwright/test';
 
-/** Đọc số tiền từ chuỗi hiển thị, giữ dấu trừ (khác locale: "40,000" hay "40.000"). */
-export const amount = (s: string) => (/[-\u2212\u2013]\s*\d/.test(s) ? -1 : 1) * Number(s.replace(/\D/g, ''));
-
 export class CheckoutPage {
   readonly code: Locator;
   readonly applyButton: Locator;

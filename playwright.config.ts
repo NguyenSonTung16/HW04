@@ -20,7 +20,6 @@ export default defineConfig({
   timeout: 60_000,
   expect: { timeout: 7_000 },
   globalSetup: './support/global-setup.ts',
-  globalTeardown: './support/global-teardown.ts',
   reporter: [
     ['list'],
     ['html', { outputFolder: process.env.REPORT_DIR ?? 'reports/all', open: 'never', title: REPORT_TITLE }],
