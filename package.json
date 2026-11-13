@@ -1,0 +1,29 @@
+{
+  "name": "eshop-hw04-automation",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "playwright test",
+    "test:matrix": "node scripts/run-matrix.mjs fr02 fr09 fr15",
+    "test:fr05": "node scripts/run-matrix.mjs fr05",
+    "report": "playwright show-report"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NguyenSonTung16/HW04.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/NguyenSonTung16/HW04/issues"
+  },
+  "homepage": "https://github.com/NguyenSonTung16/HW04#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.65.0",
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2"
+  },
+  "private": true
+}
