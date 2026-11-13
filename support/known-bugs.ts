@@ -17,6 +17,7 @@ const FR15_3: Bug = { id: 'BUG-FR15-003', issue: 10 };
 const FR15_4: Bug = { id: 'BUG-FR15-004', issue: 11 };
 
 const KNOWN: Record<string, Record<string, Bug[]>> = {
+  FR05: {}, // chưa có bug được xác nhận; thêm sau khi chạy và review
   FR02: { TC02: [FR02_1], TC03: [FR02_1], TC04: [FR02_1, FR02_2], TC07: [FR02_3], TC08: [FR02_2], TC14: [FR02_2], N2: [FR02_4] },
   FR09: { TC01: [FR09_1], TC09b: [FR09_2], TC14: [FR09_3], TC17: [FR09_3] },
   FR15: {
@@ -29,6 +30,6 @@ const KNOWN: Record<string, Record<string, Bug[]>> = {
 };
 
 /** Chú thích bug cho một ca: `BUG-... – #n <link>`; trả về mảng rỗng nếu ca chưa gắn bug. */
-export function bugAnnotations(feature: 'FR02' | 'FR09' | 'FR15', caseId: string): { type: string; description: string }[] {
+export function bugAnnotations(feature: 'FR02' | 'FR09' | 'FR15' | 'FR05', caseId: string): { type: string; description: string }[] {
   return (KNOWN[feature][caseId] ?? []).map((b) => ({ type: 'bug', description: `${b.id} – #${b.issue} ${ISSUES_URL}/${b.issue}` }));
 }

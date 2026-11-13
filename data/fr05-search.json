@@ -1,0 +1,14 @@
+[
+  { "id": "TC01", "title": "Số thẻ sản phẩm ở trang chủ bằng số sản phẩm API trả về", "origin": "README FR-05", "kind": "grid-count", "predicted": "Pass", "note": "Kiểm tra cả dòng 'Hiển thị N sản phẩm'." },
+  { "id": "TC02", "title": "Mỗi thẻ có ảnh, tên và giá khớp dữ liệu API", "origin": "README FR-05", "kind": "card-fields", "predicted": "Pass", "note": "Chỉ kiểm thuộc tính src của ảnh (ảnh lấy từ máy chủ ngoài), không kiểm ảnh đã tải xong." },
+  { "id": "TC03", "title": "Giá hiển thị đơn vị ₫ và dấu phân cách hàng nghìn", "origin": "README FR-05", "kind": "price-format", "predicted": "Fail", "predictedBug": "Giao diện hiển thị 'VND', không phải '₫'" },
+  { "id": "TC04", "title": "Ảnh sản phẩm có alt mô tả (không rỗng)", "origin": "README FR-05", "kind": "img-alt", "predicted": "Fail", "predictedBug": "alt rỗng" },
+  { "id": "TC05", "title": "Tìm 'Pro' chỉ hiện sản phẩm có tên chứa 'Pro'", "origin": "README FR-05", "kind": "search-match", "input": { "keyword": "Pro" }, "predicted": "Pass" },
+  { "id": "TC06", "title": "Tìm không phân biệt hoa thường ('iphone')", "origin": "README FR-05", "kind": "search-match", "input": { "keyword": "iphone" }, "expected": { "contains": "iPhone 15 Pro Max" }, "predicted": "Pass", "note": "SQLite LIKE không phân biệt hoa thường với ký tự ASCII." },
+  { "id": "TC07", "title": "Gửi ô tìm kiếm trống thì hiện lại toàn bộ sản phẩm", "origin": "README FR-05", "kind": "search-empty-all", "input": { "keyword": "" }, "predicted": "Pass" },
+  { "id": "TC08", "title": "Không có kết quả thì hiện thông báo trống (empty state)", "origin": "README FR-05", "kind": "search-none", "input": { "keyword": "zzzkhongtontai" }, "predicted": "Fail", "predictedBug": "Không có thông báo khi danh sách rỗng" },
+  { "id": "TC09", "title": "Từ khóa chứa HTML được hiển thị như văn bản, không render", "origin": "README FR-05", "kind": "search-html", "input": { "keyword": "<b id=\"hw04-xss\">dam</b>" }, "predicted": "Fail", "predictedBug": "Từ khóa render bằng dangerouslySetInnerHTML" },
+  { "id": "TC10", "title": "Có trạng thái loading khi tải danh sách chậm", "origin": "README FR-05", "kind": "loading", "input": { "delayMs": 1500 }, "predicted": "Fail", "predictedBug": "Không có state loading" },
+  { "id": "TC11", "title": "Trang chủ chỉ có đúng một thẻ h1", "origin": "README FR-05", "kind": "h1-count", "expected": { "count": 1 }, "predicted": "Fail", "predictedBug": "Có thêm h1 'Hiển thị N sản phẩm'" },
+  { "id": "TC12", "title": "Từ khóa chứa dấu nháy đơn không gây lỗi SQL", "origin": "extra", "kind": "search-quote", "input": { "keyword": "'" }, "predicted": "Fail", "predictedBug": "Nối chuỗi vào SQL, trả 500 và HTML lỗi", "note": "Ngoài README FR-05 (an toàn đầu vào); có thể bỏ nếu không muốn tính vào FR-05." }
+]
