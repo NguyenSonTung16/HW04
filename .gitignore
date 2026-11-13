@@ -2,3 +2,4 @@ node_modules/
 test-results/
 .sut-backup/
 *.log
+reports/_draft/
