@@ -15,13 +15,6 @@ function open() {
   return db;
 }
 
-export function maxProductId(): number {
-  const db = open();
-  try {
-    return (db.prepare('SELECT COALESCE(MAX(id), 0) AS m FROM products').get() as { m: number }).m;
-  } finally { db.close(); }
-}
-
 /** Tạo sản phẩm test (đích hoặc đối chứng) và trả về id. */
 export function seedProduct(name: string, price: number, categoryId = 1): number {
   const db = open();
@@ -40,19 +33,20 @@ export function getProduct(id: number): ProductRow | undefined {
   } finally { db.close(); }
 }
 
-/** Các sản phẩm có id lớn hơn mốc (dùng để phát hiện sản phẩm do chính test này làm xuất hiện). */
-export function productsAfter(id: number): ProductRow[] {
+export function countProducts(): number {
   const db = open();
   try {
-    return db.prepare('SELECT * FROM products WHERE id > ? ORDER BY id').all(id) as ProductRow[];
+    return (db.prepare('SELECT COUNT(*) AS c FROM products').get() as { c: number }).c;
   } finally { db.close(); }
 }
 
-/** Dọn dữ liệu: chỉ xóa các dòng được tạo SAU mốc id chụp ở đầu test (chạy tuần tự nên đó là dữ liệu của test này). */
-export function deleteProductsAfter(id: number) {
+/** Dọn dữ liệu: chỉ xóa đúng các ID mà test đã tạo (seed hoặc do SUT trả về trong phản hồi). */
+export function deleteProductsByIds(ids: number[]) {
+  if (!ids.length) return;
   const db = open();
   try {
-    db.prepare('DELETE FROM products WHERE id > ?').run(id);
+    const del = db.prepare('DELETE FROM products WHERE id = ?');
+    for (const id of ids) del.run(id);
   } finally { db.close(); }
 }
 
