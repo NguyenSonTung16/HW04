@@ -25,6 +25,7 @@ type Case = {
   atSeconds?: number; field?: 'email' | 'password'; attribute?: string;
   links?: { text: string; path: string }[];
   expected?: Expected;
+  note?: string;
 };
 
 const cases: Case[] = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'fr02-login.json'), 'utf8'));
@@ -48,6 +49,7 @@ for (const c of cases) {
   test(`FR-02 ${c.id} – ${c.title}`, async ({ page, request }) => {
     const login = new LoginPage(page);
     const exp = c.expected ?? {};
+    if (c.note) test.info().annotations.push({ type: 'note', description: c.note });
 
     if (c.kind === 'login') {
       setUserState(USER, c.setup ?? {});
@@ -55,18 +57,18 @@ for (const c of cases) {
       const respPromise = page.waitForResponse((r) => r.url().endsWith('/api/login'));
       await login.login(c.input!);
       const resp = await respPromise;
-      if (exp.status) expect(resp.status()).toBe(exp.status);
+      if (exp.status) expect.soft(resp.status()).toBe(exp.status);
       await expectOutcome(page, login, exp.outcome!);
       if (exp.attemptsAfter !== undefined) {
-        await expect.poll(() => getUser(USER).login_attempts).toBe(exp.attemptsAfter);
+        await expect.soft.poll(() => getUser(USER).login_attempts, { message: 'bộ đếm đăng nhập sai' }).toBe(exp.attemptsAfter);
       }
       if (exp.lockedAfter !== undefined) {
-        expect(isLocked(getUser(USER))).toBe(exp.lockedAfter);
+        expect.soft(isLocked(getUser(USER)), 'trạng thái khóa').toBe(exp.lockedAfter);
       }
       if (exp.lockSecondsAfter !== undefined) {
         const remaining = lockRemainingSeconds(getUser(USER));
-        expect(remaining).toBeGreaterThan(exp.lockSecondsAfter - 5);
-        expect(remaining).toBeLessThanOrEqual(exp.lockSecondsAfter);
+        expect.soft(remaining, 'thời gian khóa còn lại (giây)').toBeGreaterThan(exp.lockSecondsAfter - 5);
+        expect.soft(remaining, 'thời gian khóa còn lại (giây)').toBeLessThanOrEqual(exp.lockSecondsAfter);
       }
     }
 
@@ -83,7 +85,10 @@ for (const c of cases) {
       await login.fill(c.input!);
       const wait = c.atSeconds! * 1000 - (Date.now() - lockedAt);
       if (wait > 0) await page.waitForTimeout(wait);
+      const respPromise = page.waitForResponse((r) => r.url().endsWith('/api/login'));
       await login.submit.click();
+      const resp = await respPromise;
+      expect.soft(resp.status(), `mã trạng thái /api/login tại t=${c.atSeconds}s`).toBe(exp.status!);
       await expectOutcome(page, login, exp.outcome!);
     }
 
@@ -92,10 +97,14 @@ for (const c of cases) {
       let loginRequests = 0;
       page.on('request', (r) => { if (r.url().endsWith('/api/login')) loginRequests++; });
       await login.fill(c.input!);
+      // checkValidity() là kiểm tra đồng bộ của trình duyệt, không cần chờ.
+      const valid = await login.form.evaluate((f) => (f as HTMLFormElement).checkValidity());
+      // Chờ theo sự kiện (có giới hạn) thay vì ngủ cố định: nếu form không bị chặn, request sẽ xuất hiện.
+      const sent = page.waitForRequest((r) => r.url().endsWith('/api/login'), { timeout: 2000 }).then(() => true, () => false);
       await login.submit.click();
-      await page.waitForTimeout(500);
-      expect(loginRequests).toBe(exp.requests);
-      expect(await login.form.evaluate((f) => (f as HTMLFormElement).checkValidity())).toBe(exp.formValid);
+      await sent;
+      expect.soft(valid, 'HTML5 validity của form').toBe(exp.formValid);
+      expect(loginRequests, 'số request /api/login đã gửi').toBe(exp.requests);
     }
 
     if (c.kind === 'attribute') {

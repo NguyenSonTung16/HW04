@@ -8,7 +8,8 @@ export class LoginPage {
   readonly error: Locator;
 
   constructor(readonly page: Page) {
-    // Form đăng nhập không có id/name/label liên kết -> định vị theo vị trí input trong form.
+    // Hạn chế đã biết: form đăng nhập không có id/name/label liên kết (getByLabel không dùng được),
+    // nên định vị theo vị trí input trong form. Nếu giao diện đổi thứ tự ô nhập, chỉ cần sửa ở đây.
     this.form = page.locator('form');
     this.email = this.form.locator('input').nth(0);
     this.password = this.form.locator('input').nth(1);
