@@ -2,10 +2,10 @@ import { test, expect, Page, APIRequestContext } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
 import { ProductPage, CartPage } from '../pages/ShopPages';
-import { CheckoutPage, digits } from '../pages/CheckoutPage';
+import { CheckoutPage, amount } from '../pages/CheckoutPage';
 import { API_URL } from '../support/env';
 import { getUser } from '../support/db';
-import { seedProduct, removeSeededProducts, setCouponUsage, setCouponActive, resetCouponState } from '../support/coupon-db';
+import { seedProduct, setCouponUsage, setCouponActive, resetCouponState } from '../support/coupon-db';
 
 const USER = { email: 'test@eshop.com', password: 'Test1234!' };
 
@@ -44,18 +44,15 @@ async function putProductInCart(page: Page, cartPrice: number, token: string | n
 async function goToCheckout(page: Page, cartPrice: number) {
   const cart = new CartPage(page);
   await cart.open();
-  expect.soft(digits(await cart.subtotal.innerText()), 'tổng giỏ hàng').toBe(cartPrice);
+  expect.soft(amount(await cart.subtotal.innerText()), 'tổng giỏ hàng').toBe(cartPrice);
   await cart.checkoutButton.click();
   const checkout = new CheckoutPage(page);
   await checkout.expectOpen();
   return checkout;
 }
 
+// Dọn sản phẩm seed và trạng thái coupon ở global-teardown (không dọn ở afterAll để không phá dữ liệu của lượt khác).
 test.beforeEach(() => resetCouponState());
-test.afterAll(() => {
-  resetCouponState();
-  removeSeededProducts();
-});
 
 for (const c of cases) {
   test(`FR-09 ${c.id} – ${c.title}`, async ({ page, request }) => {
@@ -79,15 +76,19 @@ for (const c of cases) {
         if (exp.outcome === 'applied') {
           expect.soft(resp.status()).toBe(200);
           await expect(checkout.success).toBeVisible();
-          expect.soft(digits(await checkout.saving.innerText()), 'số tiền giảm').toBe(exp.discount);
-          expect.soft(digits(await checkout.afterDiscount.innerText()), 'thành tiền').toBe(exp.final);
-          expect.soft(digits(await checkout.grandTotal.innerText()), 'tổng thanh toán').toBe(exp.final);
+          const discount = amount(await checkout.saving.innerText());
+          const final = amount(await checkout.afterDiscount.innerText());
+          expect.soft(discount, 'số tiền giảm không được âm').toBeGreaterThanOrEqual(0);
+          expect.soft(final, 'thành tiền không được lớn hơn tổng đơn').toBeLessThanOrEqual(price);
+          expect.soft(discount, 'số tiền giảm').toBe(exp.discount);
+          expect.soft(final, 'thành tiền').toBe(exp.final);
+          expect.soft(amount(await checkout.grandTotal.innerText()), 'tổng thanh toán').toBe(exp.final);
         } else {
           expect.soft(resp.status()).toBeGreaterThanOrEqual(400);
           await expect(checkout.error).toBeVisible();
           if (exp.errorContains) await expect(checkout.error).toContainText(exp.errorContains);
           await expect(checkout.success).toHaveCount(0);
-          expect.soft(digits(await checkout.grandTotal.innerText()), 'tổng thanh toán không đổi').toBe(price);
+          expect.soft(amount(await checkout.grandTotal.innerText()), 'tổng thanh toán không đổi').toBe(price);
         }
       }
 
@@ -110,7 +111,7 @@ for (const c of cases) {
         await expect(checkout.success).toBeVisible();
         await checkout.editableTotal.fill(String(c.input.newTotal));
         if (exp.successHidden) await expect(checkout.success).toHaveCount(0);
-        expect.soft(digits(await checkout.grandTotal.innerText()), 'tổng thanh toán sau khi sửa').toBe(c.input.newTotal);
+        expect.soft(amount(await checkout.grandTotal.innerText()), 'tổng thanh toán sau khi sửa').toBe(c.input.newTotal);
       }
     }
 
