@@ -28,12 +28,15 @@ export class HomePage {
     await expect(this.cards).toHaveCount(expectedCount);
   }
 
-  /** Nhập từ khóa, gửi form, trả về phản hồi GET /api/products của lần tìm. */
+  /** Nhập từ khóa, gửi form, trả về phản hồi của đúng request tìm kiếm (tham số search trùng từ khóa). */
   async search(keyword: string): Promise<Response> {
     await this.searchInput.fill(keyword);
     const [resp] = await Promise.all([
       this.page.waitForResponse(
-        (r) => r.request().method() === 'GET' && new URL(r.url()).pathname === '/api/products',
+        (r) => {
+          const u = new URL(r.url());
+          return r.request().method() === 'GET' && u.pathname === '/api/products' && (u.searchParams.get('search') ?? '') === keyword;
+        },
       ),
       this.searchButton.click(),
     ]);

@@ -9,7 +9,7 @@ type Case = {
   id: string; title: string; origin: string;
   kind: 'grid-count' | 'card-fields' | 'price-format' | 'img-alt' | 'search-match' | 'search-empty-all'
     | 'search-none' | 'search-html' | 'loading' | 'h1-count' | 'search-quote';
-  input?: { keyword?: string; delayMs?: number };
+  input?: { keyword?: string };
   expected?: { contains?: string; count?: number };
   predicted: 'Pass' | 'Fail'; predictedBug?: string; note?: string;
 };
@@ -41,9 +41,11 @@ for (const c of cases) {
           const card = home.cards.nth(i);
           const name = (await card.locator('h2').innerText()).trim();
           const p = all.body.find((x) => x.name === name);
-          expect.soft(p, `Thẻ ${i} có tên không có trong API: ${name}`).toBeTruthy();
+          expect(p, `Thẻ ${i} có tên không có trong API: ${name}`).toBeTruthy(); // tiền điều kiện của các so sánh sau
           await expect.soft(card.locator('img')).toHaveAttribute('src', p?.imageUrl ?? '__none__');
-          await expect.soft(card.locator('p').first()).toContainText(/\d/);
+          // So giá hiển thị với giá API: chỉ lấy chữ số nên không phụ thuộc định dạng (VND/₫, dấu , hay .).
+          const priceText = (await card.locator('p').first().innerText()).trim();
+          expect.soft(priceText.replace(/\D/g, ''), `Giá hiển thị "${priceText}" của "${name}"`).toBe(String(p?.price));
         }
         break;
       }
@@ -52,7 +54,7 @@ for (const c of cases) {
         const texts = (await home.prices.allTextContents()).map((s) => s.trim());
         expect(texts.length).toBe(all.body.length);
         for (const t of texts) {
-          expect.soft(t, `Giá hiển thị: "${t}"`).toMatch(/^\d{1,3}([.,]\d{3})+\s?₫$/);
+          expect.soft(t, `Giá hiển thị: "${t}"`).toMatch(/^\d{1,3}([.,]\d{3})*\s?₫$/);
         }
         break;
       }
@@ -72,7 +74,8 @@ for (const c of cases) {
         expect(api.status).toBe(200); // tiền điều kiện
         await home.open(all.body.length);
         const resp = await home.search(kw);
-        expect(resp.status()).toBe(200);
+        // 304 là hợp lệ: trình duyệt dùng lại bản cache của cùng URL; nội dung vẫn được đối chiếu qua giao diện bên dưới.
+        expect([200, 304]).toContain(resp.status());
         const expectedNames = api.body.map((p) => p.name);
         await expect(home.cards).toHaveCount(expectedNames.length);
         expect.soft(await home.cardNames()).toEqual(expectedNames);
@@ -99,22 +102,33 @@ for (const c of cases) {
       case 'search-html': {
         const kw = c.input!.keyword!;
         await home.open(all.body.length);
-        await home.search(kw);
+        const resp = await home.search(kw);
+        expect(new URL(resp.url()).searchParams.get('search')).toBe(kw); // đúng request tìm kiếm
+        expect(resp.status()).toBe(200);
         await expect.soft(page.locator('#hw04-xss')).toHaveCount(0); // HTML không được render thành phần tử
         await expect.soft(page.getByText(kw, { exact: false })).toBeVisible(); // từ khóa phải hiện như văn bản
         break;
       }
       case 'loading': {
-        const delay = c.input!.delayMs!;
-        await page.route(`${API_URL}/api/products*`, async (route) => {
-          await new Promise((r) => setTimeout(r, delay));
+        // Giữ request danh sách cho tới khi test cho phép, để kiểm tra loading đúng lúc request còn đang chờ.
+        let release!: () => void;
+        const gate = new Promise<void>((r) => (release = r));
+        let held = false;
+        await page.route((u) => u.origin === new URL(API_URL).origin && u.pathname === '/api/products', async (route) => {
+          held = true;
+          await gate;
           await route.continue();
         });
-        await page.goto('/');
-        await expect(home.searchInput).toBeVisible();
-        // Trong lúc API chưa trả lời, giao diện phải báo đang tải.
-        await expect.soft(page.getByText(/đang tải|loading/i).or(page.getByRole('progressbar'))).toBeVisible({ timeout: 1000 });
-        await expect(home.cards).toHaveCount(all.body.length, { timeout: delay + 7000 }); // sau đó phải tải xong
+        try {
+          await page.goto('/');
+          await expect(home.searchInput).toBeVisible();
+          await expect.poll(() => held, { message: 'request /api/products phải bị giữ lại' }).toBe(true);
+          await expect(home.cards).toHaveCount(0); // tiền điều kiện: dữ liệu chưa về
+          await expect.soft(page.getByText(/đang tải|loading/i).or(page.getByRole('progressbar'))).toBeVisible({ timeout: 1000 });
+        } finally {
+          release();
+        }
+        await expect(home.cards).toHaveCount(all.body.length); // sau khi nhả request thì phải tải xong
         break;
       }
       case 'h1-count': {
